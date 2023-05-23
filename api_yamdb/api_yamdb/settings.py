@@ -1,6 +1,6 @@
 from pathlib import Path
-
-
+from django.contrib.auth import get_user_model
+import os
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
@@ -21,6 +21,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'api',
+    'rest_framework',
+    'djoser',
     'reviews.apps.ReviewsConfig',
     'api.apps.ApiConfig',
     'users.apps.UsersConfig',
@@ -105,6 +108,9 @@ STATIC_URL = '/static/'
 
 STATICFILES_DIRS = ((BASE_DIR / 'static/'),)
 
+EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'sent_emails') 
 
 # Переопределяем станадртную модель users
 AUTH_USER_MODEL = 'users.User'
+
