@@ -9,7 +9,7 @@ name = "api_yamdb"
 version = "0.1.0"
 description = "Яндекс Практикум. Итоговый проект 10-го спринта \"YaMDb\"."
 authors = [
-  "Developer <your@mail.com>",
+  "Alisher Rizabekov <magneto06@mail.ru>",
   "Nikita Letych <Ljotych@gmail.com>",
   "Mikhail Loginov <loginov.mike@gmail.com>",
 ]
