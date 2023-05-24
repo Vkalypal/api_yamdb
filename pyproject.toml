@@ -10,7 +10,7 @@ version = "0.1.0"
 description = "Яндекс Практикум. Итоговый проект 10-го спринта \"YaMDb\"."
 authors = [
   "Developer <your@mail.com>",
-  "Developer <your@mail.com>",
+  "Nikita Letych <Ljotych@gmail.com>",
   "Mikhail Loginov <loginov.mike@gmail.com>",
 ]
 license = "Unlicense"
