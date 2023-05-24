@@ -1,9 +1,10 @@
+from django_filters.rest_framework import DjangoFilterBackend
 from django.core.mail import send_mail
-from rest_framework import status
+from rest_framework import status, filters
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
-from reviews.models import Categories, Genres, Title
+from reviews.models import Category, Genre, Title
 
 from .serializers import (
     CategoriesSerializer,
@@ -16,16 +17,22 @@ from .serializers import (
 class TitleViewSet(ModelViewSet):
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
+    filter_backends = (DjangoFilterBackend,)
+    filterset_fields = ('category__slug', 'genre__slug', 'name', 'year')
 
 
 class GenresViewSet(ModelViewSet):
-    queryset = Genres.objects.all()
+    queryset = Genre.objects.all()
     serializer_class = GenresSerializer
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
 
 
 class CategoriesViewSet(ModelViewSet):
-    queryset = Categories.objects.all()
+    queryset = Category.objects.all()
     serializer_class = CategoriesSerializer
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
 
 
 class SignUpViewSet(APIView):
