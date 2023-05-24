@@ -1,0 +1,297 @@
+[project]
+dynamic = ["dependencies"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[tool.poetry]
+name = "api_yamdb"
+version = "0.1.0"
+description = "Яндекс Практикум. Итоговый проект 10-го спринта \"YaMDb\"."
+authors = [
+  "Developer <your@mail.com>",
+  "Developer <your@mail.com>",
+  "Mikhail Loginov <loginov.mike@gmail.com>",
+]
+license = "Unlicense"
+readme = "README.md"
+homepage = "https://github.com/Vkalypal/api_yamdb"
+repository = "https://github.com/Vkalypal/api_yamdb"
+packages = [{include = "api_yamdb"}]
+
+[tool.poetry.scripts]
+server = "server:main"
+makemigrations = "server:makemigrations"
+migrate = "server:migrate"
+createsuperuser = "server:createsuperuser"
+
+[tool.poetry.dependencies]
+# poetry export --format requirements.txt --output requirements.txt
+# Install dependencies:
+# poetry add `cat requirements.txt`
+# or
+# cat requirements.txt | grep -v '#' | xargs poetry add
+python = "^3.9"
+requests = "2.26.0"
+django = "3.2"
+djangorestframework = "3.12.4"
+pyjwt = "2.1.0"
+pytest = "6.2.4"
+pytest-django = "4.4.0"
+pytest-pythonpath = "0.7.3"
+
+[tool.poetry.group.dev.dependencies]
+# Install developer dependencies:
+# poetry add --group dev `cat requirements-dev.txt`
+# or
+# cat requirements-dev.txt | grep -v '#' | xargs poetry add --group dev
+isort = "5.2.1"
+black = "23.1.0"
+ruff = "0.0.269"
+poethepoet = "0.20.0"
+djangorestframework-stubs = "1.10.0"
+flake8 = "6.0.0"
+flake8-pyproject = "1.2.3"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poe.tasks]
+m = "api_yamdb/manage.py"
+r = "api_yamdb/manage.py runserver 0:8000"
+ma = "api_yamdb/manage.py makemigrations"
+mi = "api_yamdb/manage.py migrate"
+ca = "api_yamb/manage.py createsuperuser"
+md = ["ma", "mi"]
+
+[tool.mypy]
+ignore_missing_imports = true
+
+[tool.black]
+line-length = 79                  # max line length
+skip-string-normalization = 1       # disable converting single quote to double
+# by default black exclude all .gitignore files. here is regex pattern to extend this list
+# NOTE! list of files name is not supported, only regex patterns
+# WARNING! also pass this list of files to pre-commit-config.
+extend-exclude = "migrations/"
+exclude = '''
+(
+    tests
+  | \.git
+  | \.mypy_cache
+  | \.nox
+  | \.tox
+  | \.env
+  | \.venv
+)
+'''
+
+[tool.isort]
+skip_glob = "*tmp*"            # ignoring tmp files
+profile = "black"
+lines_after_imports = 2
+group_by_package = true
+ignore_comments = true
+known_first_party = ["api", "api_yamdb", "reviews", "users"] # modules as being part of the current python project
+
+[tool.pyright]
+venv = ".venv"
+typeCheckingMode = "basic"
+include = ["api_yamdb"]
+exclude = ["tests"]
+# enable subset of "strict"
+reportDuplicateImport = true
+reportInvalidStubStatement = true
+reportOverlappingOverload = true
+reportPropertyTypeMismatch = true
+reportUntypedClassDecorator = true
+reportUntypedFunctionDecorator = true
+reportUntypedNamedTuple = true
+reportUnusedImport = true
+# disable subset of "basic"
+reportGeneralTypeIssues = false
+reportMissingModuleSource = false
+reportOptionalCall = false
+reportOptionalIterable = false
+reportOptionalMemberAccess = false
+reportOptionalOperand = false
+reportOptionalSubscript = false
+reportPrivateImportUsage = false
+reportUnboundVariable = false
+
+[tool.flake8]
+max-line-length = 79 # PEP8: 79 | black: 88 | google: 120
+extend-ignore = [
+    "E731",     # assignment lambda to variable - okay
+    "E501",     # line too long
+                # (Black is used to forcing length to N symbols, but when it can't be done - we leave it as is)
+    "E203",     # whitespaces before slice :  seq[1 :2]
+    "N805",     # first argument of a method should be named 'self' (to handle pydantic validator methods)
+    "N815",     # because of contryCode field
+    "R504",     # unnecessary variable assignment before return statement
+    "W292",     # no newline at end of file 
+    # INFO: added for YP code
+    "W503", # Line break before binary operator
+    "F811", # Redefinition of unused name from line n
+]
+per-file-ignores = [
+    '*/__init__.py:F401',  # imported but unused
+]
+exclude = [
+    "tests",
+    "*/migrations",
+    "venv",
+    ".venv",
+]
+
+[tool.ruff]
+line-length = 79
+update-check = false
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$" # allow unused variables when underscore-prefixed.
+fix = true
+unfixable = ["E711"]
+
+select = [
+  # pyflakes
+  "F",
+  # pycodestyle
+  "E",
+  "W",
+  # flake8-2020
+  "YTT",
+  # flake8-bugbear
+  "B",
+  # flake8-quotes
+  "Q",
+  # pylint
+  "PLE", "PLR", "PLW",
+  # misc lints
+  "PIE",
+  # flake8-pyi
+  "PYI",
+  # tidy imports
+  "TID",
+  # implicit string concatenation
+  "ISC",
+  # type-checking imports
+  "TCH",
+  # mccabe
+  "C90",
+  # isort
+  # "I",
+  # pep8-naming
+  "N",
+  # flake8-bandit
+  "S",
+  # flake8-builtins
+  "A",
+  # flake8-print
+  "T20",
+  # flake8-use-pathlib
+  "PTH",
+]
+
+ignore = [
+  # space before : (needed for how black formats slicing)
+  # "E203",  # not yet implemented
+  # module level import not at top of file
+  "E402",
+  # do not assign a lambda expression, use a def
+  "E731",
+  # line break before binary operator
+  # "W503",  # not yet implemented
+  # line break after binary operator
+  # "W504",  # not yet implemented
+  # controversial
+  "B006",
+  # controversial
+  "B007",
+  # controversial
+  "B008",
+  # setattr is used to side-step mypy
+  "B009",
+  # getattr is used to side-step mypy
+  "B010",
+  # tests use assert False
+  "B011",
+  # tests use comparisons but not their returned value
+  "B015",
+  # false positives
+  "B019",
+  # Loop control variable overrides iterable it iterates
+  "B020",
+  # Function definition does not bind loop variable
+  "B023",
+  # Functions defined inside a loop must not use variables redefined in the loop
+  # "B301",  # not yet implemented
+  # Too many arguments to function call
+  "PLR0913",
+  # Too many returns
+  "PLR0911",
+  # Too many branches
+  "PLR0912",
+  # Too many statements
+  "PLR0915",
+  # Redefined loop name
+  "PLW2901",
+  # Global statements are discouraged
+  "PLW0603",
+  # Docstrings should not be included in stubs
+  "PYI021",
+  # Use typing_extensions.TypeAlias for type aliases
+  # "PYI026",  # not yet implemented
+  # Use "collections.abc.*" instead of "typing.*" (PEP 585 syntax)
+  # "PYI027",  # not yet implemented
+  # while int | float can be shortened to float, the former is more explicit
+  # "PYI041",  # not yet implemented
+
+  # Additional checks that don't pass yet
+  # Within an except clause, raise exceptions with ...
+  "B904",
+  # Magic number
+  "PLR2004",
+  # Consider `elif` instead of `else` then `if` to remove indentation level
+  "PLR5501",
+  # INFO: added for YP code
+  # Redefinition of unused name from line n
+  "F811",
+  # Single quotes found but double quotes preferred
+  "Q000",
+]
+
+exclude = [
+    "tests/",
+    "*/migrations/",
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+]
+
+[tool.ruff.per-file-ignores]
+"*/settings.py" = ["E501"] # ignore max-line-length
+
+[tool.pytest.ini_options]
+python_paths = "api_yamdb/"
+DJANGO_SETTINGS_MODULE = "api_yamdb.settings"
+norecursedirs = "env/*"
+addopts = "-vv -p no:cacheprovider"
+testpaths = "tests/"
+python_files = "test_*.py"
