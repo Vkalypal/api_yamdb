@@ -1,0 +1,7 @@
+isort==5.2.1
+black==23.1.0
+ruff==0.0.269
+poethepoet==0.20.0
+djangorestframework-stubs==1.10.0
+flake8==6.0.0
+flake8-pyproject==1.2.3
