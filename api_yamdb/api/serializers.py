@@ -5,21 +5,28 @@ from reviews.models import Category, Genre, Title
 User = get_user_model()
 
 
-class GenresSerializer(serializers.ModelSerializer):
+class GenreSerializer(serializers.ModelSerializer):
     class Meta:
         fields = ("name", "slug")
         model = Genre
 
 
-class CategoriesSerializer(serializers.ModelSerializer):
+class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         fields = ("name", "slug")
         model = Category
 
 
 class TitleSerializer(serializers.ModelSerializer):
-    genre = GenresSerializer()
-    category = CategoriesSerializer()
+    # genre = GenreSerializer(many=True)
+    # category = CategorySerializer()
+
+    genre = serializers.SlugRelatedField(
+        many=True, slug_field="slug", queryset=Genre.objects.all()
+    )
+    category = serializers.SlugRelatedField(
+        queryset=Category.objects.all(), slug_field="slug"
+    )
 
     class Meta:
         fields = "__all__"
