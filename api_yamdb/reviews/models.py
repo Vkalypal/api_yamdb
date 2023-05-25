@@ -20,7 +20,7 @@ class Category(models.Model):
         ordering = ["name"]
 
     def __str__(self):
-        return self.name[25:] + "..."
+        return self.name
 
 
 class Genre(models.Model):
@@ -67,7 +67,7 @@ class Title(models.Model):
         ordering = ["name"]
 
     def __str__(self):
-        return self.name[25:] + "..."
+        return self.name
 
 
 class GenreTitle(models.Model):
