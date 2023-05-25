@@ -1,6 +1,8 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from reviews.models import Categories, Genres, Title
+
+from reviews.models import Category, Comment, Genre, Review, Title
+
 
 User = get_user_model()
 
@@ -11,19 +13,41 @@ class TitleSerializer(serializers.ModelSerializer):
         model = Title
 
 
-class GenresSerializer(serializers.ModelSerializer):
+class GenreSerializer(serializers.ModelSerializer):
     class Meta:
         fields = ("name", "slug")
-        model = Genres
+        model = Genre
 
 
-class CategoriesSerializer(serializers.ModelSerializer):
+class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         fields = ("name", "slug")
-        model = Categories
+        model = Category
 
 
 class SignUpSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ("email", "username")
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(
+        slug_field="username",
+        read_only=True,
+    )
+
+    class Meta:
+        model = Review
+        fields = "__all__"
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(
+        slug_field="username",
+        read_only=True,
+    )
+
+    class Meta:
+        model = Comment
+        fields = "__all__"
