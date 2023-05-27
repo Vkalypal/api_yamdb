@@ -1,8 +1,12 @@
 import csv
 
+from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 
 from reviews.models import Category, Comment, Genre, GenreTitle, Review, Title
+
+
+User = get_user_model()
 
 
 class Command(BaseCommand):
@@ -13,6 +17,7 @@ class Command(BaseCommand):
         self.import_genres()
         self.import_titles()
         self.import_genre_titles()
+        self.import_users()
         self.import_reviews()
         self.import_comments()
         self.stdout.write(self.style.SUCCESS('Data imported successfully.'))
@@ -74,22 +79,42 @@ class Command(BaseCommand):
                 genre_title = GenreTitle(title=title, genre=genre)
                 genre_title.save()
 
+    def import_users(self):
+        User.objects.all().delete()
+        with open('static/data/users.csv', 'r', encoding='utf-8') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                user = User(
+                    id=row['id'],
+                    username=row['username'],
+                    email=row['email'],
+                    role=row['role'],
+                    bio=row['bio'],
+                    first_name=row['first_name'],
+                    last_name=row['last_name'],
+                )
+                user.save()
+
     def import_reviews(self):
         Review.objects.all().delete()
         with open('static/data/review.csv', 'r', encoding='utf-8') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
                 title_id = row['title_id']
+                author = row['author']
                 try:
                     title = Title.objects.get(id=title_id)
+                    author = User.objects.get(id=author)
                 except Title.DoesNotExist:
                     continue
 
                 review = Review(
+                    id=row['id'],
                     title=title,
                     text=row['text'],
-                    author_id=row['author_id'],
+                    author=author,
                     score=row['score'],
+                    pub_date=row['pub_date'],
                 )
                 review.save()
 
@@ -101,12 +126,18 @@ class Command(BaseCommand):
             reader = csv.DictReader(csvfile)
             for row in reader:
                 review_id = row['review_id']
+                author = row['author']
                 try:
                     review = Review.objects.get(id=review_id)
+                    author = User.objects.get(id=author)
                 except Review.DoesNotExist:
                     continue
 
                 comment = Comment(
-                    review=review, text=row['text'], author_id=row['author_id']
+                    id=row['id'],
+                    review=review,
+                    text=row['text'],
+                    author=author,
+                    pub_date=row['pub_date'],
                 )
                 comment.save()
