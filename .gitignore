@@ -145,6 +145,11 @@ dmypy.json
 
 .mypy_cache
 
-# папки со статикой и медиа
+# Папки со статикой и медиа
 media/
 
+# Все миграции Django
+**/migrations
+
+# Скрипты для ручного тестирования API
+rest_client_scripts
