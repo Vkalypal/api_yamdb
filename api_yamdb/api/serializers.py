@@ -7,7 +7,7 @@ from reviews.validators import validate_username
 
 User = get_user_model()
 
-ERROR_REPEAT_REVIEW = 'Вы уже оставляли отзыв на это произведение'
+ERROR_REPEAT_REVIEW = "Вы уже оставляли отзыв на это произведение"
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -15,8 +15,14 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'first_name',
-                  'last_name', 'bio', 'role')
+        fields = (
+            "username",
+            "email",
+            "first_name",
+            "last_name",
+            "bio",
+            "role",
+        )
 
     def validate_username(self, value):
         validate_username(value)
@@ -25,10 +31,9 @@ class UserSerializer(serializers.ModelSerializer):
 
 class SignupSerializer(serializers.Serializer):
     """Сериализация данных пользователя при регистрации."""
+
     username = serializers.CharField(
-        required=True,
-        max_length=150,
-        validators=(validate_username,)
+        required=True, max_length=150, validators=(validate_username,)
     )
     email = serializers.EmailField(
         required=True,
@@ -38,15 +43,11 @@ class SignupSerializer(serializers.Serializer):
 
 class TokenSerializer(serializers.Serializer):
     """Сериализация данных для получения токена."""
+
     username = serializers.CharField(
-        required=True,
-        max_length=150,
-        validators=(validate_username,)
+        required=True, max_length=150, validators=(validate_username,)
     )
-    confirmation_code = serializers.CharField(
-        required=True,
-        max_length=6
-    )
+    confirmation_code = serializers.CharField(required=True, max_length=6)
 
 
 class GenreSerializer(serializers.ModelSerializer):
@@ -63,10 +64,10 @@ class CategorySerializer(serializers.ModelSerializer):
 
 class TitleWriteSerializer(serializers.ModelSerializer):
     genre = serializers.SlugRelatedField(
-        slug_field='slug', many=True, queryset=Genre.objects.all()
+        slug_field="slug", many=True, queryset=Genre.objects.all()
     )
     category = serializers.SlugRelatedField(
-        slug_field='slug', queryset=Category.objects.all()
+        slug_field="slug", queryset=Category.objects.all()
     )
 
     class Meta:
@@ -85,7 +86,15 @@ class TitleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Title
-        fields = ('id', 'name', 'year', 'description', 'genre', 'category', 'rating')
+        fields = (
+            "id",
+            "name",
+            "year",
+            "description",
+            "genre",
+            "category",
+            "rating",
+        )
 
     def get_rating(self, instance):
         reviews = Review.objects.filter(title=instance)
@@ -97,8 +106,8 @@ class TitleSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        data['genre'] = GenreSerializer(instance.genre.all(), many=True).data
-        data['category'] = CategorySerializer(instance.category).data
+        data["genre"] = GenreSerializer(instance.genre.all(), many=True).data
+        data["category"] = CategorySerializer(instance.category).data
         return data
 
 
@@ -111,7 +120,7 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         if self.context["request"].method == "POST":
-            title_id = self.context['request'].parser_context["kwargs"][
+            title_id = self.context["request"].parser_context["kwargs"][
                 "title_id"
             ]
             if Review.objects.filter(

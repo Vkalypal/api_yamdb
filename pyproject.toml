@@ -6,17 +6,10 @@ dependencies = {file = ["requirements.txt"]}
 
 [tool.poetry]
 name = "api_yamdb"
-version = "0.1.0"
+version = "1.0.0"
 description = "Яндекс Практикум. Итоговый проект 10-го спринта \"YaMDb\"."
-authors = [
-  "Developer <your@mail.com>",
-  "Nikita Letych <Ljotych@gmail.com>",
-  "Mikhail Loginov <loginov.mike@gmail.com>",
-]
 license = "Unlicense"
 readme = "README.md"
-homepage = "https://github.com/Vkalypal/api_yamdb"
-repository = "https://github.com/Vkalypal/api_yamdb"
 packages = [{include = "api_yamdb"}]
 
 [tool.poetry.scripts]
@@ -26,32 +19,31 @@ migrate = "server:migrate"
 createsuperuser = "server:createsuperuser"
 
 [tool.poetry.dependencies]
-# poetry export --format requirements.txt --output requirements.txt
-# Install dependencies:
-# poetry add `cat requirements.txt`
-# or
-# cat requirements.txt | grep -v '#' | xargs poetry add
 python = "^3.9"
 requests = "2.26.0"
 django = "3.2"
 djangorestframework = "3.12.4"
 pyjwt = "2.1.0"
-pytest = "6.2.4"
-pytest-django = "4.4.0"
-pytest-pythonpath = "0.7.3"
+djoser = "2.1.0"
+django-filter = "^23.2"
 
 [tool.poetry.group.dev.dependencies]
-# Install developer dependencies:
-# poetry add --group dev `cat requirements-dev.txt`
-# or
-# cat requirements-dev.txt | grep -v '#' | xargs poetry add --group dev
 isort = "5.2.1"
 black = "23.1.0"
 ruff = "0.0.269"
 poethepoet = "0.20.0"
-djangorestframework-stubs = "1.10.0"
 flake8 = "6.0.0"
 flake8-pyproject = "1.2.3"
+
+[tool.poetry.group.test.dependencies]
+pytest = "6.2.4"
+coverage = "^7.2.6"
+pytest-cov = "^4.1.0"
+pytest-django = "4.4.0"
+pytest-pythonpath = "0.7.3"
+
+[tool.poetry.group.typing.dependencies]
+djangorestframework-stubs = "1.10.0"
 
 [build-system]
 requires = ["poetry-core"]
@@ -71,9 +63,6 @@ ignore_missing_imports = true
 [tool.black]
 line-length = 79                  # max line length
 skip-string-normalization = 1       # disable converting single quote to double
-# by default black exclude all .gitignore files. here is regex pattern to extend this list
-# NOTE! list of files name is not supported, only regex patterns
-# WARNING! also pass this list of files to pre-commit-config.
 extend-exclude = "migrations/"
 exclude = '''
 (
@@ -88,12 +77,12 @@ exclude = '''
 '''
 
 [tool.isort]
-skip_glob = "*tmp*"            # ignoring tmp files
+skip_glob = ["*tmp*", "tests/*", "**/migrations/**"]
 profile = "black"
 lines_after_imports = 2
-group_by_package = true
+order_by_type = true
 ignore_comments = true
-known_first_party = ["api", "api_yamdb", "reviews", "users"] # modules as being part of the current python project
+known_first_party = ["api", "api_yamdb", "reviews"] # modules as being part of the current python project
 
 [tool.pyright]
 venv = ".venv"
@@ -131,7 +120,6 @@ extend-ignore = [
     "N815",     # because of contryCode field
     "R504",     # unnecessary variable assignment before return statement
     "W292",     # no newline at end of file 
-    # INFO: added for YP code
     "W503", # Line break before binary operator
     "F811", # Redefinition of unused name from line n
 ]
@@ -147,7 +135,6 @@ exclude = [
 
 [tool.ruff]
 line-length = 79
-update-check = false
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$" # allow unused variables when underscore-prefixed.
 fix = true
 unfixable = ["E711"]
@@ -253,8 +240,6 @@ ignore = [
   "PLR2004",
   # Consider `elif` instead of `else` then `if` to remove indentation level
   "PLR5501",
-  # INFO: added for YP code
-  # Redefinition of unused name from line n
   "F811",
   # Single quotes found but double quotes preferred
   "Q000",
@@ -288,10 +273,63 @@ exclude = [
 [tool.ruff.per-file-ignores]
 "*/settings.py" = ["E501"] # ignore max-line-length
 
+[tool.ruff.mccabe]
+# Unlike Flake8, default to a complexity level of 10.
+max-complexity = 10
+
+[tool.ruff.pydocstyle]
+convention = "google" # Accepts: "google", "numpy", or "pep257".
+
 [tool.pytest.ini_options]
 python_paths = "api_yamdb/"
 DJANGO_SETTINGS_MODULE = "api_yamdb.settings"
 norecursedirs = "env/*"
-addopts = "-vv -p no:cacheprovider"
+addopts = "--cov --nomigrations --reuse-db"
 testpaths = "tests/"
 python_files = "test_*.py"
+
+[tool.coverage.paths]
+source = ["api_yamdb"]
+
+[tool.coverage.run]
+branch = true
+source = ["api_yamdb", "tests"]
+omit = [
+    "*/admin.py",
+    "*/manage.py",
+    "*/migrations/*",
+    "*/tests/*",
+    "conftest.py",
+]
+
+[tool.coverage.report]
+skip_empty = true
+ignore_errors = true
+show_missing = true
+fail_under = 80
+exclude_lines = [
+    # Have to re-enable the standard pragma
+    "pragma: no cover",
+
+    # Don't complain about missing debug-only code:
+    "def __repr__",
+    "def __str__",
+    "if self.debug",
+
+    # Don't complain if tests don't hit defensive assertion code:
+    "raise AssertionError",
+    "raise NotImplementedError",
+
+    # Don't complain if non-runnable code isn't run:
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "if typing.TYPE_CHECKING:"
+]
+omit = [
+    "*/admin.py",
+    "*/manage.py",
+    "*/migrations/*",
+    "*/tests/*",
+    "conftest.py",
+]

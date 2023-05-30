@@ -1,59 +1,53 @@
-from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
 
-from reviews.validators import validate_year, validate_username
+from reviews.validators import validate_username, validate_year
 
 
-USER = 'user'
-ADMIN = 'admin'
-MODERATOR = 'moderator'
+USER = "user"
+ADMIN = "admin"
+MODERATOR = "moderator"
 
 ROLE_CHOICES = (
-    (USER, 'Пользователь'),
-    (MODERATOR, 'Модератор'),
-    (ADMIN, 'Администратор'),
+    (USER, "Пользователь"),
+    (MODERATOR, "Модератор"),
+    (ADMIN, "Администратор"),
 )
 
 
 class User(AbstractUser):
     """Кастомная модель пользователя."""
+
     username = models.CharField(
-        verbose_name='Имя пользователя',
+        verbose_name="Имя пользователя",
         validators=(validate_username,),
         max_length=150,
         unique=True,
     )
     email = models.EmailField(
-        verbose_name='Электронная почта',
+        verbose_name="Электронная почта",
         max_length=254,
         unique=True,
     )
     role = models.CharField(
-        verbose_name='Роль',
+        verbose_name="Роль",
         max_length=max(len(role) for role, _ in ROLE_CHOICES),
         choices=ROLE_CHOICES,
         default=USER,
-        blank=True
+        blank=True,
     )
     bio = models.TextField(
-        verbose_name='Биография',
+        verbose_name="Биография",
         blank=True,
     )
     first_name = models.CharField(
-        verbose_name='Имя',
-        max_length=150,
-        blank=True
+        verbose_name="Имя", max_length=150, blank=True
     )
     last_name = models.CharField(
-        verbose_name='Фамилия',
-        max_length=150,
-        blank=True
+        verbose_name="Фамилия", max_length=150, blank=True
     )
-    confirmation_code = models.CharField(
-        max_length=6,
-        default='-' * 6
-    )
+    confirmation_code = models.CharField(max_length=6, default="-" * 6)
 
     @property
     def is_user(self):
@@ -71,9 +65,9 @@ class User(AbstractUser):
         return self.role == MODERATOR
 
     class Meta:
-        ordering = ('username',)
-        verbose_name = 'Пользователь'
-        verbose_name_plural = 'Пользователи'
+        ordering = ("username",)
+        verbose_name = "Пользователь"
+        verbose_name_plural = "Пользователи"
 
     def __str__(self):
         return self.username[:15]
@@ -166,28 +160,22 @@ class GenreTitle(models.Model):
 class FeedbackModel(models.Model):
     """Родительский класс для отзывов и комментариев."""
 
-    FEEDBACK = (
-        '{text:.15} username: {author} '
-        'дата публикации: {pub_date}'
-    )
+    FEEDBACK = "{text:.15} username: {author} " "дата публикации: {pub_date}"
 
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Aвтор',
+        verbose_name="Aвтор",
     )
     text = models.TextField(
-        verbose_name='Текст',
+        verbose_name="Текст",
     )
-    pub_date = models.DateTimeField(
-        'Дата публикации',
-        auto_now_add=True
-    )
+    pub_date = models.DateTimeField("Дата публикации", auto_now_add=True)
 
     class Meta:
         abstract = True
-        ordering = ('-pub_date',)
-        default_related_name = '%(class)ss'
+        ordering = ("-pub_date",)
+        default_related_name = "%(class)ss"
 
     def __str__(self):
         return self.FEEDBACK.format(
@@ -200,17 +188,13 @@ class FeedbackModel(models.Model):
 class Review(FeedbackModel):
     """Отзывы пользователей."""
 
-    ERROR_SCORE_MIN_MAX = (
-        f'Допустимы значения от {1} до {10}'
-    )
+    ERROR_SCORE_MIN_MAX = f"Допустимы значения от {1} до {10}"
 
     title = models.ForeignKey(
-        Title,
-        on_delete=models.CASCADE,
-        verbose_name='Произведение'
+        Title, on_delete=models.CASCADE, verbose_name="Произведение"
     )
     score = models.PositiveSmallIntegerField(
-        verbose_name='Оценка',
+        verbose_name="Оценка",
         validators=[
             MinValueValidator(1, ERROR_SCORE_MIN_MAX),
             MaxValueValidator(10, ERROR_SCORE_MIN_MAX),
@@ -218,23 +202,22 @@ class Review(FeedbackModel):
     )
 
     class Meta(FeedbackModel.Meta):
-        verbose_name = 'Отзыв'
-        verbose_name_plural = 'Отзывы'
+        verbose_name = "Отзыв"
+        verbose_name_plural = "Отзывы"
         constraints = (
             models.UniqueConstraint(
-                fields=['author', 'title'],
-                name='unique_title'),
+                fields=["author", "title"], name="unique_title"
+            ),
         )
 
 
 class Comment(FeedbackModel):
     """Комментарии пользователей."""
+
     review = models.ForeignKey(
-        Review,
-        on_delete=models.CASCADE,
-        verbose_name='Отзыв'
+        Review, on_delete=models.CASCADE, verbose_name="Отзыв"
     )
 
     class Meta(FeedbackModel.Meta):
-        verbose_name = 'Комментарий'
-        verbose_name_plural = 'Комментарии'
+        verbose_name = "Комментарий"
+        verbose_name_plural = "Комментарии"

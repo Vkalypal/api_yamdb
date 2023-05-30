@@ -1,4 +1,5 @@
 from random import sample
+
 import django_filters
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
@@ -12,35 +13,41 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
 
-from .permissions import (
-    IsAdmin, IsAdminOrReadOnly,
-    IsOwnerAdminModeratorOrReadOnly
-)
+from reviews.models import Category, Genre, Review, Title
 
+from .permissions import (
+    IsAdmin,
+    IsAdminOrReadOnly,
+    IsOwnerAdminModeratorOrReadOnly,
+)
 from .serializers import (
-    CategorySerializer, CommentSerializer,
-    GenreSerializer, ReviewSerializer,
-    SignupSerializer, TitleWriteSerializer,
-    TitleSerializer, TokenSerializer,
+    CategorySerializer,
+    CommentSerializer,
+    GenreSerializer,
+    ReviewSerializer,
+    SignupSerializer,
+    TitleSerializer,
+    TitleWriteSerializer,
+    TokenSerializer,
     UserSerializer,
 )
-from reviews.models import Category, Genre, Review, Title
+
 
 User = get_user_model()
 
-EMAIL_HEADER = 'Код подтверждения регистрации на платформе Yamdb.'
-EMAIL_TEXT = 'Ваш одноразовый код подтверждения: {confirmation_code}.'
-USER_ERROR = 'Данные имя пользователя или Email уже зарегистрированы.'
-CODE_ERROR = 'Введен неверный код подтверждения. Запросите новый код.'
+EMAIL_HEADER = "Код подтверждения регистрации на платформе Yamdb."
+EMAIL_TEXT = "Ваш одноразовый код подтверждения: {confirmation_code}."
+USER_ERROR = "Данные имя пользователя или Email уже зарегистрированы."
+CODE_ERROR = "Введен неверный код подтверждения. Запросите новый код."
 
 
 class TitleFilter(django_filters.FilterSet):
-    genre = django_filters.CharFilter(field_name='genre__slug')
-    category = django_filters.CharFilter(field_name='category__slug')
+    genre = django_filters.CharFilter(field_name="genre__slug")
+    category = django_filters.CharFilter(field_name="category__slug")
 
     class Meta:
         model = Title
-        fields = ['genre', 'category', 'name', 'year']
+        fields = ["genre", "category", "name", "year"]
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -48,47 +55,47 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = (IsAdmin,)
     filter_backends = (filters.SearchFilter,)
-    search_fields = ('username',)
-    lookup_field = 'username'
-    http_method_names = ('get', 'post', 'patch', 'delete')
+    search_fields = ("username",)
+    lookup_field = "username"
+    http_method_names = ("get", "post", "patch", "delete")
     pagination_class = PageNumberPagination
 
-    @action(methods=('get', 'patch'), detail=False, url_path='me',
-            permission_classes=(IsAuthenticated,))
+    @action(
+        methods=("get", "patch"),
+        detail=False,
+        url_path="me",
+        permission_classes=(IsAuthenticated,),
+    )
     def user_owner(self, request):
         user = request.user
-        if request.method == 'GET':
+        if request.method == "GET":
             return Response(
-                self.get_serializer(user).data,
-                status=status.HTTP_200_OK
+                self.get_serializer(user).data, status=status.HTTP_200_OK
             )
-        serializer = self.get_serializer(user, data=request.data,
-                                         partial=True)
+        serializer = self.get_serializer(user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save(role=user.role, partial=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-@api_view(['POST'])
+@api_view(["POST"])
 @permission_classes((AllowAny,))
 def signup(request):
     serializer = SignupSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    username = serializer.validated_data['username']
-    email = serializer.validated_data['email']
+    username = serializer.validated_data["username"]
+    email = serializer.validated_data["email"]
     try:
-        user, created = User.objects.get_or_create(username=username,
-                                                   email=email)
+        user, created = User.objects.get_or_create(
+            username=username, email=email
+        )
     except IntegrityError:
         raise serializers.ValidationError(USER_ERROR)
-    confirmation_code = ''.join(sample(
-        '0123456789',
-        6
-    ))
+    confirmation_code = "".join(sample("0123456789", 6))
     send_mail(
         EMAIL_HEADER,
         EMAIL_TEXT.format(confirmation_code=confirmation_code),
-        'admin@yamdb.fake',
+        "admin@yamdb.fake",
         [user.email],
     )
     user.confirmation_code = confirmation_code
@@ -96,7 +103,7 @@ def signup(request):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-@api_view(['POST'])
+@api_view(["POST"])
 @permission_classes((AllowAny,))
 def get_token(request):
     """
@@ -105,16 +112,16 @@ def get_token(request):
     """
     serializer = TokenSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    user = get_object_or_404(User, username=request.data['username'])
+    user = get_object_or_404(User, username=request.data["username"])
     if (
-        user.confirmation_code != '-' * 6
-        and user.confirmation_code == serializer.data['confirmation_code']
+        user.confirmation_code != "-" * 6
+        and user.confirmation_code == serializer.data["confirmation_code"]
     ):
         return Response(
-            {'token': str(AccessToken.for_user(user))},
-            status=status.HTTP_201_CREATED
+            {"token": str(AccessToken.for_user(user))},
+            status=status.HTTP_201_CREATED,
         )
-    user.confirmation_code = '-' * 6
+    user.confirmation_code = "-" * 6
     user.save()
     raise serializers.ValidationError(CODE_ERROR)
 
@@ -126,18 +133,19 @@ class ReviewViewSet(viewsets.ModelViewSet):
     /titles/{title_id}/reviews/{review_id}/comments/,
     /titles/{titles_id}/reviews/{review_id}/comments/{comment_id}/
     """
+
     serializer_class = ReviewSerializer
-    http_method_names = ('get', 'post', 'patch', 'delete')
+    http_method_names = ("get", "post", "patch", "delete")
     permission_classes = (IsOwnerAdminModeratorOrReadOnly,)
 
     def get_title(self):
         return get_object_or_404(
             Title,
-            id=self.kwargs.get('title_id'),
+            id=self.kwargs.get("title_id"),
         )
 
     def get_queryset(self):
-        return self.get_title().reviews.select_related('title', 'author')
+        return self.get_title().reviews.select_related("title", "author")
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user, title=self.get_title())
@@ -150,18 +158,19 @@ class CommentViewSet(viewsets.ModelViewSet):
     /titles/{title_id}/reviews/{review_id}/comments/,
     /titles/{titles_id}/reviews/{review_id}/comments/{comment_id}/
     """
+
     serializer_class = CommentSerializer
-    http_method_names = ('get', 'post', 'patch', 'delete')
+    http_method_names = ("get", "post", "patch", "delete")
     permission_classes = (IsOwnerAdminModeratorOrReadOnly,)
 
     def get_review(self):
         return get_object_or_404(
             Review,
-            id=self.kwargs.get('review_id'),
+            id=self.kwargs.get("review_id"),
         )
 
     def get_queryset(self):
-        return self.get_review().comments.select_related('review', 'author')
+        return self.get_review().comments.select_related("review", "author")
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user, review=self.get_review())
@@ -175,24 +184,27 @@ class TitleViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminOrReadOnly,)
 
     def get_serializer_class(self):
-        if self.action in ('list', 'retrieve'):
+        if self.action in ("list", "retrieve"):
             return TitleSerializer
 
         return TitleWriteSerializer
 
 
-class CategoryGenreBaseViewSet(mixins.CreateModelMixin,
-                               mixins.ListModelMixin,
-                               mixins.DestroyModelMixin,
-                               viewsets.GenericViewSet):
+class CategoryGenreBaseViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet,
+):
     """
     Абстрактный вьюсет для Жанров и Категорий
     с поддержкой запросв GET LIST, POST, DELETE.
     """
+
     filter_backends = (filters.SearchFilter,)
-    search_fields = ('name',)
+    search_fields = ("name",)
     pagination_class = PageNumberPagination
-    lookup_field = 'slug'
+    lookup_field = "slug"
     permission_classes = (IsAdminOrReadOnly,)
 
 
