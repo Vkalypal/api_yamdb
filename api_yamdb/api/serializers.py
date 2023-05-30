@@ -77,6 +77,7 @@ class TitleWriteSerializer(serializers.ModelSerializer):
 class TitleSerializer(serializers.ModelSerializer):
     genre = GenreSerializer(many=True)
     category = CategorySerializer()
+    rating = serializers.SerializerMethodField()
 
     class Meta:
         fields = "__all__"
@@ -84,7 +85,15 @@ class TitleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Title
-        fields = ('id', 'name', 'year', 'description', 'genre', 'category')
+        fields = ('id', 'name', 'year', 'description', 'genre', 'category', 'rating')
+
+    def get_rating(self, instance):
+        reviews = Review.objects.filter(title=instance)
+        if reviews.exists():
+            total_scores = sum(review.score for review in reviews)
+            average_score = total_scores / reviews.count()
+            return average_score
+        return None
 
     def to_representation(self, instance):
         data = super().to_representation(instance)

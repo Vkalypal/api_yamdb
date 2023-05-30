@@ -14,7 +14,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 
 from .permissions import (
     IsAdmin, IsAdminOrReadOnly,
-    IsOwnerAdminModeratorOrReadOnly,
+    IsOwnerAdminModeratorOrReadOnly
 )
 
 from .serializers import (
@@ -172,6 +172,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     serializer_class = TitleSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
+    permission_classes = (IsAdminOrReadOnly,)
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
@@ -195,15 +196,11 @@ class CategoryGenreBaseViewSet(mixins.CreateModelMixin,
     permission_classes = (IsAdminOrReadOnly,)
 
 
-class GenreViewSet(viewsets.ModelViewSet):
+class GenreViewSet(CategoryGenreBaseViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ("name",)
 
 
-class CategoryViewSet(viewsets.ModelViewSet):
+class CategoryViewSet(CategoryGenreBaseViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ("name",)
