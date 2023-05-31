@@ -24,7 +24,7 @@ requests = "2.26.0"
 django = "3.2"
 djangorestframework = "3.12.4"
 pyjwt = "2.1.0"
-djoser = "2.1.0"
+djangorestframework-simplejwt = "4.7.1"
 django-filter = "^23.2"
 
 [tool.poetry.group.dev.dependencies]
@@ -119,7 +119,6 @@ extend-ignore = [
     "N805",     # first argument of a method should be named 'self' (to handle pydantic validator methods)
     "N815",     # because of contryCode field
     "R504",     # unnecessary variable assignment before return statement
-    "W292",     # no newline at end of file 
     "W503", # Line break before binary operator
     "F811", # Redefinition of unused name from line n
 ]

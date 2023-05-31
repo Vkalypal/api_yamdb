@@ -82,7 +82,7 @@ python3 manage.py createsuperuser
 python manage.py runserver
 ```
 
-### Список часто используемых адресов
+## Список часто используемых адресов
 
 - [Главная страница проекта](http://127.0.0.1:8000/)
 
@@ -90,40 +90,581 @@ python manage.py runserver
 
 - [Документация проекта на OpenAPI/Swagger Redoc](http://127.0.0.1:8000/redoc/)
 
-## Поддерживаемые запросы
+## <a name="queries"></a> Поддерживаемые запросы
 
-| Method | Endpoint                                                             |
-| ------ | -------------------------------------------------------------------- |
-| POST   | /api/v1/auth/signup/                                                 |
-| POST   | /api/v1/auth/token/                                                  |
-|        |                                                                      |
-| GET    | /api/v1/categories/                                                  |
-| POST   | /api/v1/categories/                                                  |
-| DELETE | /api/v1/categories/{slug}/                                           |
-|        |                                                                      |
-| GET    | /api/v1/genres/                                                      |
-| POST   | /api/v1/genres/                                                      |
-| DELETE | /api/v1/genres/{slug}/                                               |
-|        |                                                                      |
-| POST   | /api/v1/titles/                                                      |
-| GET    | /api/v1/titles/{titles_id}/                                          |
-| PATCH  | /api/v1/titles/{titles_id}/                                          |
-| DELETE | /api/v1/titles/{titles_id}/                                          |
-|        |                                                                      |
-| GET    | /api/v1/titles/{title_id}/reviews/                                   |
-| POST   | /api/v1/titles/{title_id}/reviews/                                   |
-| GET    | /api/v1/titles/{title_id}/reviews/{review_id}/                       |
-| PATCH  | /api/v1/titles/{title_id}/reviews/{review_id}/                       |
-| DELETE | /api/v1/titles/{title_id}/reviews/{review_id}/                       |
-|        |                                                                      |
-| GET    | /api/v1/titles/{title_id}/reviews/{review_id}/comments/              |
-| POST   | /api/v1/titles/{title_id}/reviews/{review_id}/comments/              |
-| GET    | /api/v1/titles/{title_id}/reviews/{review_id}/comments/{comment_id}/ |
-| PATCH  | /api/v1/titles/{title_id}/reviews/{review_id}/comments/{comment_id}/ |
-| DELETE | /api/v1/titles/{title_id}/reviews/{review_id}/comments/{comment_id}/ |
-|        |                                                                      |
-| GET    | /api/v1/users/                                                       |
-| POST   | /api/v1/users/                                                       |
-| GET    | /api/v1/users/{username}/                                            |
-| PATCH  | /api/v1/users/{username}/                                            |
-| DELETE | /api/v1/users/{username}/                                            |
+### POST /api/v1/auth/signup/
+
+Получить код подтверждения на переданный email для регистрации нового пользователя
+Права доступа: Доступно без токена.
+Использовать имя 'me' в качестве username запрещено.
+Поля email и username должны быть уникальными.
+
+#### Формат ответа
+
+```json
+{
+  "email": "string",
+  "username": "string"
+}
+```
+
+[Вернуться к списку запросов](#queries)
+
+### POST /api/v1/auth/token/
+
+Получение JWT-токена в обмен на username и confirmation code.
+
+Права доступа: Доступно без токена.
+
+#### Формат ответа
+
+```json
+{
+  "token": "string"
+}
+```
+
+[Вернуться к списку запросов](#queries)
+
+### GET /api/v1/categories/
+
+### GET /api/v1/categories/?search=slug
+
+Получить список всех категорий
+
+Права доступа: Доступно без токена
+
+#### Формат ответа
+
+```json
+[
+  {
+    "count": 0,
+    "next": "string",
+    "previous": "string",
+    "results": [
+      {
+        "name": "string",
+        "slug": "string"
+      }
+    ]
+  }
+]
+```
+
+[Вернуться к списку запросов](#queries)
+
+### POST /api/v1/categories/
+
+Создать категорию.
+
+Права доступа: Администратор.
+
+Поле slug каждой категории должно быть уникальным.
+
+#### Формат ответа
+
+```json
+{
+  "name": "string",
+  "slug": "string"
+}
+```
+
+[Вернуться к списку запросов](#queries)
+
+### DELETE /api/v1/categories/{slug}/
+
+Удалить категорию.
+
+Права доступа: Администратор.
+
+#### Формат ответа
+
+Status code 204
+[Вернуться к списку запросов](#queries)
+
+### GET /api/v1/genres/
+
+### GET /api/v1/genres/?search=slug
+
+Получить список всех жанров.
+
+Права доступа: Доступно без токена
+
+#### Формат ответа
+
+```json
+[
+  {
+    "count": 0,
+    "next": "string",
+    "previous": "string",
+    "results": [
+      {
+        "name": "string",
+        "slug": "string"
+      }
+    ]
+  }
+]
+```
+
+[Вернуться к списку запросов](#queries)
+
+### POST /api/v1/genres/
+
+Добавить жанр.
+
+Права доступа: Администратор.
+
+Поле slug каждого жанра должно быть уникальным.
+
+#### Формат ответа
+
+```json
+{
+  "name": "string",
+  "slug": "string"
+}
+```
+
+[Вернуться к списку запросов](#queries)
+
+## DELETE /api/v1/genres/{slug}/
+
+Удалить жанр.
+
+Права доступа: Администратор.
+
+#### Формат ответа
+
+Status code 204
+[Вернуться к списку запросов](#queries)
+
+### POST /api/v1/titles/
+
+Добавить новое произведение.
+
+Права доступа: Администратор.
+
+Нельзя добавлять произведения, которые еще не вышли (год выпуска не может быть больше текущего).
+
+При добавлении нового произведения требуется указать уже существующие категорию и жанр.
+
+#### Формат ответа
+
+```json
+{
+  "id": 0,
+  "name": "string",
+  "year": 0,
+  "rating": 0,
+  "description": "string",
+  "genre": [
+    {
+      "name": "string",
+      "slug": "string"
+    }
+  ],
+  "category": {
+    "name": "string",
+    "slug": "string"
+  }
+}
+```
+
+[Вернуться к списку запросов](#queries)
+
+### GET /api/v1/titles/{titles_id}/
+
+Информация о произведении
+
+Права доступа: Доступно без токена
+
+#### Формат ответа
+
+```json
+{
+  "id": 0,
+  "name": "string",
+  "year": 0,
+  "rating": 0,
+  "description": "string",
+  "genre": [
+    {
+      "name": "string",
+      "slug": "string"
+    }
+  ],
+  "category": {
+    "name": "string",
+    "slug": "string"
+  }
+}
+```
+
+[Вернуться к списку запросов](#queries)
+
+### PATCH /api/v1/titles/{titles_id}/
+
+Обновить информацию о произведении
+
+Права доступа: Администратор
+
+#### Формат ответа
+
+```json
+{
+  "id": 0,
+  "name": "string",
+  "year": 0,
+  "rating": 0,
+  "description": "string",
+  "genre": [
+    {
+      "name": "string",
+      "slug": "string"
+    }
+  ],
+  "category": {
+    "name": "string",
+    "slug": "string"
+  }
+}
+```
+
+[Вернуться к списку запросов](#queries)
+
+### DELETE /api/v1/titles/{titles_id}/
+
+Удалить произведение.
+
+Права доступа: Администратор.
+
+#### Формат ответа
+
+Status code 204
+[Вернуться к списку запросов](#queries)
+
+### GET /api/v1/titles/{title_id}/reviews/
+
+Получить список всех отзывов.
+
+Права доступа: Доступно без токена.
+
+#### Формат ответа
+
+```json
+[
+  {
+    "count": 0,
+    "next": "string",
+    "previous": "string",
+    "results": [
+      {
+        "id": 0,
+        "text": "string",
+        "author": "string",
+        "score": 1,
+        "pub_date": "2019-08-24T14:15:22Z"
+      }
+    ]
+  }
+]
+```
+
+[Вернуться к списку запросов](#queries)
+
+### POST /api/v1/titles/{title_id}/reviews/
+
+Добавить новый отзыв. Пользователь может оставить только один отзыв на произведение.
+
+Права доступа: Аутентифицированные пользователи.
+
+#### Формат ответа
+
+```json
+{
+  "id": 0,
+  "text": "string",
+  "author": "string",
+  "score": 1,
+  "pub_date": "2019-08-24T14:15:22Z"
+}
+```
+
+[Вернуться к списку запросов](#queries)
+
+### GET /api/v1/titles/{title_id}/reviews/{review_id}/
+
+Получить отзыв по id для указанного произведения.
+
+Права доступа: Доступно без токена.
+
+#### Формат ответа
+
+```json
+{
+  "id": 0,
+  "text": "string",
+  "author": "string",
+  "score": 1,
+  "pub_date": "2019-08-24T14:15:22Z"
+}
+```
+
+[Вернуться к списку запросов](#queries)
+
+### PATCH /api/v1/titles/{title_id}/reviews/{review_id}/
+
+Частично обновить отзыв по id.
+
+Права доступа: Автор отзыва, модератор или администратор.
+
+#### Формат ответа
+
+```json
+{
+  "id": 0,
+  "text": "string",
+  "author": "string",
+  "score": 1,
+  "pub_date": "2019-08-24T14:15:22Z"
+}
+```
+
+[Вернуться к списку запросов](#queries)
+
+### DELETE /api/v1/titles/{title_id}/reviews/{review_id}/
+
+Удалить отзыв по id
+
+Права доступа: Автор отзыва, модератор или администратор.
+
+#### Формат ответа
+
+Status code 204
+[Вернуться к списку запросов](#queries)
+
+### GET /api/v1/titles/{title_id}/reviews/{review_id}/comments/
+
+Получить список всех комментариев к отзыву по id
+
+Права доступа: Доступно без токена.
+
+#### Формат ответа
+
+```json
+[
+  {
+    "count": 0,
+    "next": "string",
+    "previous": "string",
+    "results": [
+      {
+        "id": 0,
+        "text": "string",
+        "author": "string",
+        "pub_date": "2019-08-24T14:15:22Z"
+      }
+    ]
+  }
+]
+```
+
+[Вернуться к списку запросов](#queries)
+
+### POST /api/v1/titles/{title_id}/reviews/{review_id}/comments/
+
+Добавить новый комментарий для отзыва.
+
+Права доступа: Аутентифицированные пользователи.
+
+#### Формат ответа
+
+```json
+{
+  "id": 0,
+  "text": "string",
+  "author": "string",
+  "pub_date": "2019-08-24T14:15:22Z"
+}
+```
+
+[Вернуться к списку запросов](#queries)
+
+### GET /api/v1/titles/{title_id}/reviews/{review_id}/comments/{comment_id}/
+
+Получить комментарий для отзыва по id.
+
+Права доступа: Доступно без токена.
+
+#### Формат ответа
+
+```json
+{
+  "id": 0,
+  "text": "string",
+  "author": "string",
+  "pub_date": "2019-08-24T14:15:22Z"
+}
+```
+
+[Вернуться к списку запросов](#queries)
+
+### PATCH /api/v1/titles/{title_id}/reviews/{review_id}/comments/{comment_id}/
+
+Частично обновить комментарий к отзыву по id.
+
+Права доступа: Автор комментария, модератор или администратор.
+
+#### Формат ответа
+
+```json
+{
+  "id": 0,
+  "text": "string",
+  "author": "string",
+  "pub_date": "2019-08-24T14:15:22Z"
+}
+```
+
+[Вернуться к списку запросов](#queries)
+
+### DELETE /api/v1/titles/{title_id}/reviews/{review_id}/comments/{comment_id}/
+
+Удалить комментарий к отзыву по id.
+
+Права доступа: Автор комментария, модератор или администратор.
+
+#### Формат ответа
+
+Status code 204
+[Вернуться к списку запросов](#queries)
+
+### GET /api/v1/users/
+
+Получить список всех пользователей.
+
+Права доступа: Администратор
+
+#### Формат ответа
+
+```json
+[
+  {
+    "count": 0,
+    "next": "string",
+    "previous": "string",
+    "results": [
+      {
+        "username": "string",
+        "email": "user@example.com",
+        "first_name": "string",
+        "last_name": "string",
+        "bio": "string",
+        "role": "user"
+      }
+    ]
+  }
+]
+```
+
+[Вернуться к списку запросов](#queries)
+
+### POST /api/v1/users/
+
+Добавить нового пользователя.
+
+Права доступа: Администратор
+
+Поля email и username должны быть уникальными.
+
+#### Формат ответа
+
+```json
+{
+  "username": "string",
+  "email": "user@example.com",
+  "first_name": "string",
+  "last_name": "string",
+  "bio": "string",
+  "role": "user"
+}
+```
+
+[Вернуться к списку запросов](#queries)
+
+### GET /api/v1/users/{username}/
+
+Получить пользователя по username.
+
+Права доступа: Администратор
+
+#### Формат ответа
+
+```json
+{
+  "username": "string",
+  "email": "user@example.com",
+  "first_name": "string",
+  "last_name": "string",
+  "bio": "string",
+  "role": "user"
+}
+```
+
+[Вернуться к списку запросов](#queries)
+
+### PATCH /api/v1/users/{username}/
+
+Изменить данные пользователя по username.
+
+Права доступа: Администратор.
+
+Поля email и username должны быть уникальными.
+
+#### Формат ответа
+
+```json
+{
+  "username": "string",
+  "email": "user@example.com",
+  "first_name": "string",
+  "last_name": "string",
+  "bio": "string",
+  "role": "user"
+}
+```
+
+[Вернуться к списку запросов](#queries)
+
+### DELETE /api/v1/users/{username}/
+
+Удалить пользователя по username.
+
+Права доступа: Администратор.
+
+#### Формат ответа
+
+Status code 204
+[Вернуться к списку запросов](#queries)
+
+## Использованные технологии
+
+- [Python - интерпретируемый язык программирования](https://www.python.org)
+
+- [Django - свободный фреймворк для веб-приложений на языке Python](https://www.djangoproject.com)
+
+- [Django REST framework - мощный и гибкий набор инструментов для создания Web API](https://www.django-rest-framework.org)
+
+- [Simple JWT - дополнение, реализующее JSON Web Token аутентификацию для Django REST Framework](https://github.com/jazzband/djangorestframework-simplejwt)
+
+- [Django-filter - приложение, реализующее фильтрацию наборов запросов](https://github.com/carltongibson/django-filter)
+
+## Авторы
+
+- Алишер Ризабеков
+- Никита Лётыч
+- Михаил Логинов
