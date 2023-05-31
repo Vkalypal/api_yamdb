@@ -5,29 +5,35 @@ from django.db import models
 from reviews.validators import validate_username, validate_year
 
 
-USER = "user"
-ADMIN = "admin"
-MODERATOR = "moderator"
-
-ROLE_CHOICES = (
-    (USER, "Пользователь"),
-    (MODERATOR, "Модератор"),
-    (ADMIN, "Администратор"),
-)
-
-
 class User(AbstractUser):
     """Кастомная модель пользователя."""
+
+    USER = "user"
+    ADMIN = "admin"
+    MODERATOR = "moderator"
+
+    ROLE_CHOICES = (
+        (USER, "Пользователь"),
+        (MODERATOR, "Модератор"),
+        (ADMIN, "Администратор"),
+    )
+
+    USERNAME_MAX_LENGTH = 150
+    EMAIL_MAX_LENGTH = 254
+    FIRST_NAME_MAX_LENGTH = 150
+    FIRST_NAME_MAX_OUTPUT_LENGTH = 15
+    LAST_NAME_MAX_LENGTH = 150
+    CONFIRMATION_CODE_LENGTH = 6
 
     username = models.CharField(
         verbose_name="Имя пользователя",
         validators=(validate_username,),
-        max_length=150,
+        max_length=USERNAME_MAX_LENGTH,
         unique=True,
     )
     email = models.EmailField(
         verbose_name="Электронная почта",
-        max_length=254,
+        max_length=EMAIL_MAX_LENGTH,
         unique=True,
     )
     role = models.CharField(
@@ -42,27 +48,30 @@ class User(AbstractUser):
         blank=True,
     )
     first_name = models.CharField(
-        verbose_name="Имя", max_length=150, blank=True
+        verbose_name="Имя", max_length=FIRST_NAME_MAX_LENGTH, blank=True
     )
     last_name = models.CharField(
-        verbose_name="Фамилия", max_length=150, blank=True
+        verbose_name="Фамилия", max_length=LAST_NAME_MAX_LENGTH, blank=True
     )
-    confirmation_code = models.CharField(max_length=6, default="-" * 6)
+    confirmation_code = models.CharField(
+        max_length=CONFIRMATION_CODE_LENGTH,
+        default="-" * CONFIRMATION_CODE_LENGTH,
+    )
 
     @property
     def is_user(self):
         """Обычный пользователь."""
-        return self.role == USER
+        return self.role == User.USER
 
     @property
     def is_admin(self):
         """Пользователь с правами администратора."""
-        return self.role == ADMIN or self.is_staff
+        return self.role == User.ADMIN or self.is_staff
 
     @property
     def is_moderator(self):
         """Пользователь с правами модератора."""
-        return self.role == MODERATOR
+        return self.role == User.MODERATOR
 
     class Meta:
         ordering = ("username",)
@@ -70,13 +79,18 @@ class User(AbstractUser):
         verbose_name_plural = "Пользователи"
 
     def __str__(self):
-        return self.username[:15]
+        return self.username[: User.FIRST_NAME_MAX_OUTPUT_LENGTH]
 
 
 class Category(models.Model):
-    name = models.CharField(verbose_name="Название категории", max_length=256)
+    NAME_MAX_LENGTH = 256
+    SLUG_MAX_LENGTH = 50
+
+    name = models.CharField(
+        verbose_name="Название категории", max_length=NAME_MAX_LENGTH
+    )
     slug = models.SlugField(
-        verbose_name="Слаг категории", max_length=50, unique=True
+        verbose_name="Слаг категории", max_length=SLUG_MAX_LENGTH, unique=True
     )
 
     class Meta:
@@ -89,9 +103,14 @@ class Category(models.Model):
 
 
 class Genre(models.Model):
-    name = models.CharField(verbose_name="Название жанра", max_length=256)
+    NAME_MAX_LENGTH = 256
+    SLUG_MAX_LENGTH = 50
+
+    name = models.CharField(
+        verbose_name="Название жанра", max_length=NAME_MAX_LENGTH
+    )
     slug = models.SlugField(
-        verbose_name="Слаг жанра", max_length=50, unique=True
+        verbose_name="Слаг жанра", max_length=SLUG_MAX_LENGTH, unique=True
     )
 
     class Meta:
@@ -104,7 +123,11 @@ class Genre(models.Model):
 
 
 class Title(models.Model):
-    name = models.CharField(verbose_name="Наименование", max_length=256)
+    NAME_MAX_LENGTH = 256
+
+    name = models.CharField(
+        verbose_name="Наименование", max_length=NAME_MAX_LENGTH
+    )
     year = models.IntegerField(
         verbose_name="Год",
         db_index=True,
@@ -152,6 +175,7 @@ class GenreTitle(models.Model):
     class Meta:
         verbose_name = "Произведение"
         verbose_name_plural = "Произведения"
+        ordering = ["title"]
 
     def __str__(self):
         return f"{self.title} - {self.genre}"
@@ -160,7 +184,11 @@ class GenreTitle(models.Model):
 class FeedbackModel(models.Model):
     """Родительский класс для отзывов и комментариев."""
 
-    FEEDBACK = "{text:.15} username: {author} " "дата публикации: {pub_date}"
+    TEXT_MAX_OUTPUT_LENGTH = 15
+    FEEDBACK = (
+        "{text:.TEXT_MAX_OUTPUT_LENGTH} "
+        "username: {author} дата публикации: {pub_date}"
+    )
 
     author = models.ForeignKey(
         User,
@@ -188,7 +216,9 @@ class FeedbackModel(models.Model):
 class Review(FeedbackModel):
     """Отзывы пользователей."""
 
-    ERROR_SCORE_MIN_MAX = f"Допустимы значения от {1} до {10}"
+    MIN_SCORE = 1
+    MAX_SCORE = 10
+    ERROR_SCORE_MIN_MAX = f"Допустимы значения от {MIN_SCORE} до {MAX_SCORE}"
 
     title = models.ForeignKey(
         Title, on_delete=models.CASCADE, verbose_name="Произведение"
@@ -196,23 +226,29 @@ class Review(FeedbackModel):
     score = models.PositiveSmallIntegerField(
         verbose_name="Оценка",
         validators=[
-            MinValueValidator(1, ERROR_SCORE_MIN_MAX),
-            MaxValueValidator(10, ERROR_SCORE_MIN_MAX),
+            MinValueValidator(MIN_SCORE, ERROR_SCORE_MIN_MAX),
+            MaxValueValidator(MAX_SCORE, ERROR_SCORE_MIN_MAX),
         ],
     )
 
     class Meta(FeedbackModel.Meta):
         verbose_name = "Отзыв"
         verbose_name_plural = "Отзывы"
+        ordering = ("title",)
         constraints = (
             models.UniqueConstraint(
                 fields=["author", "title"], name="unique_title"
             ),
         )
 
+    def __str__(self):
+        return f"{self.title} - оценка: {self.score}"
+
 
 class Comment(FeedbackModel):
     """Комментарии пользователей."""
+
+    REVIEW_MAX_OUTPUT_LENGTH = 15
 
     review = models.ForeignKey(
         Review, on_delete=models.CASCADE, verbose_name="Отзыв"
@@ -221,3 +257,6 @@ class Comment(FeedbackModel):
     class Meta(FeedbackModel.Meta):
         verbose_name = "Комментарий"
         verbose_name_plural = "Комментарии"
+
+    def __str__(self):
+        return self.review[: Comment.REVIEW_MAX_OUTPUT_LENGTH]
