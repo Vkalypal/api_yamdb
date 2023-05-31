@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
 from reviews.models import Category, Comment, Genre, Review, Title
@@ -6,8 +7,6 @@ from reviews.validators import validate_username
 
 
 User = get_user_model()
-
-ERROR_REPEAT_REVIEW = "Вы уже оставляли отзыв на это произведение"
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -32,22 +31,34 @@ class UserSerializer(serializers.ModelSerializer):
 class SignupSerializer(serializers.Serializer):
     """Сериализация данных пользователя при регистрации."""
 
+    USERNAME_MAX_LENGTH = 150
+    EMAIL_MAX_LENGTH = 254
+
     username = serializers.CharField(
-        required=True, max_length=150, validators=(validate_username,)
+        required=True,
+        max_length=USERNAME_MAX_LENGTH,
+        validators=(validate_username,),
     )
     email = serializers.EmailField(
         required=True,
-        max_length=254,
+        max_length=EMAIL_MAX_LENGTH,
     )
 
 
 class TokenSerializer(serializers.Serializer):
     """Сериализация данных для получения токена."""
 
+    USERNAME_MAX_LENGTH = 150
+    CODE_MAX_LENGTH = 6
+
     username = serializers.CharField(
-        required=True, max_length=150, validators=(validate_username,)
+        required=True,
+        max_length=USERNAME_MAX_LENGTH,
+        validators=(validate_username,),
     )
-    confirmation_code = serializers.CharField(required=True, max_length=6)
+    confirmation_code = serializers.CharField(
+        required=True, max_length=CODE_MAX_LENGTH
+    )
 
 
 class GenreSerializer(serializers.ModelSerializer):
@@ -78,7 +89,7 @@ class TitleWriteSerializer(serializers.ModelSerializer):
 class TitleSerializer(serializers.ModelSerializer):
     genre = GenreSerializer(many=True)
     category = CategorySerializer()
-    rating = serializers.SerializerMethodField()
+    rating = serializers.FloatField()
 
     class Meta:
         fields = "__all__"
@@ -96,18 +107,11 @@ class TitleSerializer(serializers.ModelSerializer):
             "rating",
         )
 
-    def get_rating(self, instance):
-        reviews = Review.objects.filter(title=instance)
-        if reviews.exists():
-            total_scores = sum(review.score for review in reviews)
-            average_score = total_scores / reviews.count()
-            return average_score
-        return None
-
     def to_representation(self, instance):
         data = super().to_representation(instance)
         data["genre"] = GenreSerializer(instance.genre.all(), many=True).data
         data["category"] = CategorySerializer(instance.category).data
+        data["rating"] = instance.rating
         return data
 
 
@@ -123,9 +127,9 @@ class ReviewSerializer(serializers.ModelSerializer):
             title_id = self.context["request"].parser_context["kwargs"][
                 "title_id"
             ]
-            if Review.objects.filter(
-                author=self.context["request"].user, title_id=title_id
-            ).exists():
+            title = get_object_or_404(Title, pk=title_id)
+            author = self.context["request"].user
+            if title.reviews.select_related("title").filter(author=author):
                 raise serializers.ValidationError(
                     "Публиковать более одного обзора на одно и то же "
                     "произведение нельзя! "

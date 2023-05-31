@@ -220,8 +220,17 @@ class Review(FeedbackModel):
     MAX_SCORE = 10
     ERROR_SCORE_MIN_MAX = f"Допустимы значения от {MIN_SCORE} до {MAX_SCORE}"
 
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="reviews",
+        verbose_name="Aвтор",
+    )
     title = models.ForeignKey(
-        Title, on_delete=models.CASCADE, verbose_name="Произведение"
+        Title,
+        on_delete=models.CASCADE,
+        related_name="reviews",
+        verbose_name="Произведение",
     )
     score = models.PositiveSmallIntegerField(
         verbose_name="Оценка",

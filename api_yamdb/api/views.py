@@ -4,6 +4,7 @@ import django_filters
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from django.db import IntegrityError
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, serializers, status, viewsets
@@ -15,11 +16,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 
 from reviews.models import Category, Genre, Review, Title
 
-from .permissions import (
-    IsAdmin,
-    IsAdminOrReadOnly,
-    IsOwnerAdminModeratorOrReadOnly,
-)
+from .permissions import IsAdmin, IsAdminOrReadOnly, IsOwnerAdminModeratorOrReadOnly
 from .serializers import (
     CategorySerializer,
     CommentSerializer,
@@ -177,7 +174,9 @@ class CommentViewSet(viewsets.ModelViewSet):
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    queryset = Title.objects.all()
+    queryset = Title.objects.annotate(rating=Avg('reviews__score')).order_by(
+        'id'
+    )
     serializer_class = TitleSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
