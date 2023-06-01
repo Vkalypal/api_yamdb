@@ -44,6 +44,17 @@ class SignupSerializer(serializers.Serializer):
         max_length=EMAIL_MAX_LENGTH,
     )
 
+    def validate(self, data):
+        if User.objects.filter(username=data["username"]).exists():
+            email = User.objects.get(username=data["username"]).email
+            if email != data["email"]:
+                raise serializers.ValidationError("Неправильный email")
+        if User.objects.filter(email=data["email"]).exists():
+            username = User.objects.get(email=data["email"]).username
+            if username != data["username"]:
+                raise serializers.ValidationError("Неправильный username")
+        return data
+
 
 class TokenSerializer(serializers.Serializer):
     """Сериализация данных для получения токена."""

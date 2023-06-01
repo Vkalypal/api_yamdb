@@ -1,9 +1,8 @@
-from random import sample
-
 import django_filters
+from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
-from django.db import IntegrityError
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
@@ -16,7 +15,11 @@ from rest_framework_simplejwt.tokens import AccessToken
 
 from reviews.models import Category, Genre, Review, Title
 
-from .permissions import IsAdmin, IsAdminOrReadOnly, IsOwnerAdminModeratorOrReadOnly
+from .permissions import (
+    IsAdmin,
+    IsAdminOrReadOnly,
+    IsOwnerAdminModeratorOrReadOnly,
+)
 from .serializers import (
     CategorySerializer,
     CommentSerializer,
@@ -36,6 +39,8 @@ EMAIL_HEADER = "Код подтверждения регистрации на п
 EMAIL_TEXT = "Ваш одноразовый код подтверждения: {confirmation_code}."
 USER_ERROR = "Данные имя пользователя или Email уже зарегистрированы."
 CODE_ERROR = "Введен неверный код подтверждения. Запросите новый код."
+
+CONFIRMATION_CODE_LENGTH = 6
 
 
 class TitleFilter(django_filters.FilterSet):
@@ -82,17 +87,12 @@ def signup(request):
     serializer.is_valid(raise_exception=True)
     username = serializer.validated_data["username"]
     email = serializer.validated_data["email"]
-    try:
-        user, created = User.objects.get_or_create(
-            username=username, email=email
-        )
-    except IntegrityError:
-        raise serializers.ValidationError(USER_ERROR)
-    confirmation_code = "".join(sample("0123456789", 6))
+    user, _ = User.objects.get_or_create(username=username, email=email)
+    confirmation_code = default_token_generator.make_token(user)
     send_mail(
         EMAIL_HEADER,
         EMAIL_TEXT.format(confirmation_code=confirmation_code),
-        "admin@yamdb.fake",
+        settings.SENDER_EMAIL,
         [user.email],
     )
     user.confirmation_code = confirmation_code
@@ -111,14 +111,14 @@ def get_token(request):
     serializer.is_valid(raise_exception=True)
     user = get_object_or_404(User, username=request.data["username"])
     if (
-        user.confirmation_code != "-" * 6
+        user.confirmation_code != "-" * CONFIRMATION_CODE_LENGTH
         and user.confirmation_code == serializer.data["confirmation_code"]
     ):
         return Response(
             {"token": str(AccessToken.for_user(user))},
             status=status.HTTP_201_CREATED,
         )
-    user.confirmation_code = "-" * 6
+    user.confirmation_code = "-" * CONFIRMATION_CODE_LENGTH
     user.save()
     raise serializers.ValidationError(CODE_ERROR)
 
@@ -174,8 +174,8 @@ class CommentViewSet(viewsets.ModelViewSet):
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    queryset = Title.objects.annotate(rating=Avg('reviews__score')).order_by(
-        'id'
+    queryset = Title.objects.annotate(rating=Avg("reviews__score")).order_by(
+        "id"
     )
     serializer_class = TitleSerializer
     filter_backends = (DjangoFilterBackend,)
